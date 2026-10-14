@@ -1,26 +1,26 @@
 # Horizon 2 Save Editor
 
-Editor visual para ajustar créditos e giros em um save do Forza Horizon 2 no formato Azimuth.
+A clean, browser-based editor for credits and wheelspins in Forza Horizon 2 Azimuth saves.
 
-## Usar
+## Use
 
-1. Abra `index.html` em um navegador Chromium (Chrome ou Edge).
-2. Escolha a pasta `player-1` do backup extraído.
-3. Ajuste créditos e giros e selecione **Exportar save editado**.
-4. O navegador baixa `forza-horizon-2-save-editado.zip`. Extraia o ZIP para obter a pasta `player-1` editada.
-5. Com o Azimuth e o jogo fechados, faça uma cópia da pasta ativa e substitua `data/titles/1A96545B/saves/player-1` pela pasta editada. Alterar somente `data/saves-backup-*` não muda o save que o jogo carrega.
+1. Open the site in Chrome or Edge.
+2. Select the extracted `player-1` folder from your Azimuth backup.
+3. Set credits and wheelspins, then select **Export edited save**.
+4. The browser downloads `forza-horizon-2-save-editado.zip`. Extract it to get the edited `player-1` folder.
+5. Close Azimuth and the game. Back up the active folder, then replace `data/titles/1A96545B/saves/player-1` with the edited folder. Editing a `data/saves-backup-*` folder alone does not change the save loaded by the game.
 
-O editor funciona como uma página estática. O save é aberto pelo navegador e não é enviado a um serviço de processamento.
+The site is static. Your save is read and edited in your browser; it is never uploaded to a server.
 
-## Formato esperado
+## Supported format
 
-O editor procura a revisão mais recente dentro de `User_*/revisions/*`, com `ProfileData`, `SaveState` e manifesto `commit`. Atualiza os valores `Credits` e `TombolaState/Spins`, recalcula os hashes SHA-256 e tamanhos no manifesto e preserva os outros arquivos do backup.
+The editor finds the latest revision under `User_*/revisions/*` containing `ProfileData`, `SaveState`, and its `commit` manifest. It updates `Credits` and `TombolaState/Spins`, recalculates SHA-256 hashes and file sizes in the manifest, and preserves the other backup files.
 
-## Desenvolvimento
+## Development
 
-Não há etapa de build nem dependências de runtime. Sirva esta pasta com qualquer servidor estático para desenvolvimento; o seletor de pasta funciona melhor em Chrome ou Edge.
+There is no build step or runtime dependency. Serve this folder with any static web server; Chrome or Edge is recommended for directory selection.
 
-## Publicação
+## Deployment
 
-O workflow de GitHub Actions em `.github/workflows/pages.yml` publica o conteúdo deste repositório no GitHub Pages quando o Pages está habilitado em Settings → Pages. No GitHub Free, Pages requer repositório público; um repositório privado requer upgrade de plano.
+The GitHub Actions workflow at `.github/workflows/pages.yml` publishes this repository to GitHub Pages. Enable Pages in **Settings → Pages** and choose **GitHub Actions** as the source. GitHub Pages is available for public repositories on GitHub Free.
 
