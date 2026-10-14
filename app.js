@@ -11,7 +11,7 @@ const decoder = new TextDecoder();
 const creditsMarker = new Uint8Array([7,0,0,0,...encoder.encode('Credits '),0,0,0,0,3,0,0,0]);
 
 function bytesToText(bytes) { return decoder.decode(bytes); }
-function formatNumber(value) { return new Intl.NumberFormat('pt-BR').format(Number(value) || 0); }
+function formatNumber(value) { return new Intl.NumberFormat('en-US').format(Number(value) || 0); }
 function setStatus(message, type='') {
   statusBox.textContent = message;
   statusBox.className = `status${type ? ` ${type}` : ''}`;
@@ -21,7 +21,7 @@ function findBytes(haystack, needle) {
   let found = -1;
   outer: for (let i=0; i<=haystack.length-needle.length; i++) {
     for (let j=0; j<needle.length; j++) if (haystack[i+j] !== needle[j]) continue outer;
-    if (found !== -1) throw new Error('O campo de créditos apareceu mais de uma vez.');
+    if (found !== -1) throw new Error('The credits field appears more than once.');
     found = i;
   }
   return found;
@@ -30,7 +30,7 @@ function readInt32(bytes, offset) { return new DataView(bytes.buffer, bytes.byte
 function writeInt32(bytes, offset, value) { new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).setInt32(offset, value, true); }
 function getSpins(xml) {
   const matches = [...xml.matchAll(/<Property\s+Name="Spins"\s+Value="(\d+)"\s*\/>/g)];
-  if (matches.length !== 1) throw new Error('Não encontrei um único campo TombolaState/Spins neste save.');
+  if (matches.length !== 1) throw new Error('Could not find exactly one TombolaState/Spins field in this save.');
   return Number(matches[0][1]);
 }
 function findRevision(entries) {
@@ -48,15 +48,15 @@ function findRevision(entries) {
   // Commit path is the parent revision directory; normalize it explicitly.
   const valid = candidates.filter(item => entries.has(`${item.base.slice(0, item.base.lastIndexOf('/data'))}/commit`));
   valid.sort((a,b) => BigInt(`0x${a.revision}`) > BigInt(`0x${b.revision}`) ? -1 : 1);
-  if (!valid.length) throw new Error('Pasta incompatível. Selecione player-1 extraída de um backup Azimuth com SaveState e ProfileData.');
+  if (!valid.length) throw new Error('Unsupported folder. Select player-1 extracted from an Azimuth backup containing SaveState and ProfileData.');
   return valid[0];
 }
 function encodeCredits(bytes, value) {
   const offset = findBytes(bytes, creditsMarker);
-  if (offset < 0) throw new Error('Não encontrei o campo de créditos esperado em ProfileData.');
+  if (offset < 0) throw new Error('Could not find the expected credits field in ProfileData.');
   const dataOffset = offset + creditsMarker.length;
   const original = readInt32(bytes, dataOffset);
-  if (original < 0) throw new Error('O valor de créditos do perfil parece inválido.');
+  if (original < 0) throw new Error('The profile credits value appears to be invalid.');
   writeInt32(bytes, dataOffset, value);
   return { bytes, original };
 }
@@ -64,7 +64,7 @@ function encodeSpins(bytes, value) {
   let xml = bytesToText(bytes);
   const pattern = /(<Property\s+Name="Spins"\s+Value=")(\d+)("\s*\/>)/g;
   const matches = [...xml.matchAll(pattern)];
-  if (matches.length !== 1) throw new Error('Não encontrei um único campo TombolaState/Spins em SaveState.');
+  if (matches.length !== 1) throw new Error('Could not find exactly one TombolaState/Spins field in SaveState.');
   const original = Number(matches[0][2]);
   xml = xml.replace(pattern, `$1${value}$3`);
   return { bytes: encoder.encode(xml), original };
@@ -85,24 +85,24 @@ async function loadFolder(files) {
   const profile = new Uint8Array(await fileMap.get(profilePath).arrayBuffer());
   const xml = new Uint8Array(await fileMap.get(savePath).arrayBuffer());
   const creditOffset = findBytes(profile, creditsMarker);
-  if (creditOffset < 0) throw new Error('Não encontrei o campo de créditos esperado em ProfileData.');
+  if (creditOffset < 0) throw new Error('Could not find the expected credits field in ProfileData.');
   const credits = readInt32(profile, creditOffset + creditsMarker.length);
   const spins = getSpins(bytesToText(xml));
-  if (!fileMap.has(commitPath)) throw new Error('O manifesto commit desta revisão não foi encontrado.');
+  if (!fileMap.has(commitPath)) throw new Error('Could not find this revision\'s commit manifest.');
 
   active = { revision, profilePath, savePath, commitPath, originalCredits: credits, originalSpins: spins };
   $('credits-input').value = credits;
   $('spins-input').value = spins;
   $('credits-range').value = Math.min(10000000, credits);
   $('loaded-name').textContent = (files[0]?.webkitRelativePath || files[0]?.relativePath || '').split(/[\\/]/)[0] || 'player-1';
-  $('loaded-meta').textContent = `Revisão ${revision.revision} · ${formatNumber(credits)} CR · ${formatNumber(spins)} giros`;
+  $('loaded-meta').textContent = `Revision ${revision.revision} · ${formatNumber(credits)} CR · ${formatNumber(spins)} spins`;
   $('loaded-file').classList.remove('hidden');
   dropzone.classList.add('hidden');
   editor.classList.remove('hidden');
 }
 function currentValue(input, label) {
   const value = Number(input.value);
-  if (!Number.isSafeInteger(value) || value < 0 || value > 2147483647) throw new Error(`${label}: use um número inteiro entre 0 e 2.147.483.647.`);
+  if (!Number.isSafeInteger(value) || value < 0 || value > 2147483647) throw new Error(`${label}: enter a whole number from 0 to 2,147,483,647.`);
   return value;
 }
 
@@ -132,10 +132,10 @@ function makeZip(entries) {
 async function sha256(bytes) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(b=>b.toString(16).padStart(2,'0')).join(''); }
 async function exportSave() {
   if (!active) return;
-  const button=$('export-button'); button.disabled=true; button.querySelector('span').textContent='Preparando ZIP…'; hideStatus();
+  const button=$('export-button'); button.disabled=true; button.querySelector('span').textContent='Preparing ZIP…'; hideStatus();
   try {
-    const credits=currentValue($('credits-input'),'Créditos');
-    const spins=currentValue($('spins-input'),'Giros');
+    const credits=currentValue($('credits-input'),'Credits');
+    const spins=currentValue($('spins-input'),'Wheelspins');
     const replacements=new Map();
     const profile=new Uint8Array(await fileMap.get(active.profilePath).arrayBuffer());
     const xml=new Uint8Array(await fileMap.get(active.savePath).arrayBuffer());
@@ -150,19 +150,19 @@ async function exportSave() {
       const match=rows[i].match(/^([0-9a-f]{64}) (\d+) ([A-Za-z0-9_]+)$/);
       if(!match) continue;
       const [, , , name]=match; const path=`${dataDir}/${name}`;
-      if(!fileMap.has(path)) throw new Error(`O manifesto referencia ${name}, mas o arquivo não está na pasta selecionada.`);
+      if(!fileMap.has(path)) throw new Error(`The manifest references ${name}, but that file is missing from the selected folder.`);
       const bytes=replacements.get(path)||new Uint8Array(await fileMap.get(path).arrayBuffer());
       if(changedNames.has(name)) replacements.set(path,bytes);
       rows[i]=`${await sha256(bytes)} ${bytes.length} ${name}`; seen.add(name);
     }
-    if(!seen.has('ProfileData')||!seen.has('SaveState')) throw new Error('Não consegui atualizar as somas do manifesto desta revisão.');
+    if(!seen.has('ProfileData')||!seen.has('SaveState')) throw new Error('Could not update the hashes in this revision\'s manifest.');
     replacements.set(active.commitPath,encoder.encode(rows.join('\n')));
     const zipEntries=[];
     for(const [path,file] of fileMap) zipEntries.push({name:path,bytes:replacements.get(path)||new Uint8Array(await file.arrayBuffer())});
     const blob=makeZip(zipEntries); const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='forza-horizon-2-save-editado.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-    setStatus(`ZIP pronto: ${formatNumber(credits)} créditos e ${formatNumber(spins)} giros. O backup selecionado não foi alterado.`, 'success');
-  } catch(error) { setStatus(error.message || 'Não foi possível exportar este save.', 'error'); }
-  finally { button.disabled=false;button.querySelector('span').textContent='Exportar save editado'; }
+    setStatus(`ZIP ready: ${formatNumber(credits)} credits and ${formatNumber(spins)} wheelspins. The selected backup was not changed.`, 'success');
+  } catch(error) { setStatus(error.message || 'Could not export this save.', 'error'); }
+  finally { button.disabled=false;button.querySelector('span').textContent='Export edited save'; }
 }
 
 picker.addEventListener('change', async () => { if (!picker.files.length) return; try { await loadFolder([...picker.files]); } catch(error) { setStatus(error.message,'error');statusBox.classList.remove('hidden'); } });
@@ -193,6 +193,6 @@ dropzone.addEventListener('drop',async event=>{
     for(const entry of entries)dropped.push(...await readDroppedEntry(entry));
     const files=dropped.map(({file,relativePath})=>Object.assign(file,{relativePath}));
     if(files.length)await loadFolder(files);
-  } catch(error) { setStatus(error.message||'Não foi possível abrir a pasta arrastada.','error');statusBox.classList.remove('hidden'); }
+  } catch(error) { setStatus(error.message||'Could not open the dropped folder.','error');statusBox.classList.remove('hidden'); }
 });
 
