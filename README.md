@@ -7,7 +7,8 @@ Editor visual, em português, para alterar créditos e giros em um backup extra�
 1. Abra `index.html` em um navegador Chromium (Chrome ou Edge).
 2. Escolha a pasta `player-1` do backup extraído.
 3. Ajuste créditos e giros e selecione **Exportar save editado**.
-4. O navegador baixa `forza-horizon-2-save-editado.zip`. Extraia o ZIP e use a pasta `player-1` resultante ao restaurar o backup.
+4. O navegador baixa `forza-horizon-2-save-editado.zip`. Extraia o ZIP para obter a pasta `player-1` editada.
+5. Com o Azimuth e o jogo fechados, faça uma cópia da pasta ativa e substitua `data/titles/1A96545B/saves/player-1` pela pasta editada. Alterar somente `data/saves-backup-*` não muda o save que o jogo carrega.
 
 Os arquivos são lidos e processados localmente no navegador. O app não envia o save para um servidor.
 
